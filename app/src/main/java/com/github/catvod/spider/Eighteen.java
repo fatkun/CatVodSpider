@@ -13,9 +13,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
+import android.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Eighteen extends Spider {
 
@@ -84,7 +91,8 @@ public class Eighteen extends Spider {
 
     @Override
     public String detailContent(List<String> ids) throws Exception {
-        Document doc = Jsoup.parse(OkHttp.string(url + ids.get(0), getHeader()));
+        String content = OkHttp.string(url + ids.get(0), getHeader());
+        Document doc = Jsoup.parse(content);
         Element wrap = doc.select("div.video-wrap").get(0);
         String name = wrap.select("div.archive-title > h1").text();
         String pic = wrap.select("div.player-wrap > img").attr("src");
@@ -93,7 +101,8 @@ public class Eighteen extends Spider {
         vod.setVodPic(pic);
         vod.setVodName(name);
         vod.setVodPlayFrom("18AV");
-        vod.setVodPlayUrl("播放$" + ids.get(0));
+        String playUrl = getPlayUrl(content);
+        vod.setVodPlayUrl("播放$" + playUrl);
         return Result.string(vod);
     }
 
@@ -109,7 +118,7 @@ public class Eighteen extends Spider {
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
-        return Result.get().parse().url(url + id).header(getHeader()).string();
+        return Result.get().parse().url(id).header(getHeader()).string();
     }
 
     private String searchContent(String key, String pg) {
@@ -127,5 +136,101 @@ public class Eighteen extends Spider {
             list.add(new Vod(id, name, pic, remark));
         }
         return Result.string(list);
+    }
+
+    public static String extractVariableValue(String javascriptCode, String variableName) {
+        // Regular expression to match variable declaration
+        Pattern pattern = Pattern.compile("\\b" + variableName + "\\s*=\\s*('[^']+'|\\d+)");
+        Matcher matcher = pattern.matcher(javascriptCode);
+
+        // Find the variable declaration
+        if (matcher.find()) {
+            String value = matcher.group(1).trim();
+            // Remove surrounding quotes if value is a string
+            if (value.startsWith("'") && value.endsWith("'")) {
+                value = value.substring(1, value.length() - 1);
+            }
+            return value;
+        } else {
+            return ""; // Variable not found
+        }
+    }
+
+    private String decrypt(String g, int hcdeedg252, int hadeedg252) {
+        char[] f = new char[g.length()];
+
+        hcdeedg252 = 25 >= hcdeedg252 ? hcdeedg252 : hcdeedg252 % 25;
+        char h = (char) (hcdeedg252 + 97);
+        String[] parts = g.split(String.valueOf(h));
+
+        for (int i = 0; i < parts.length; i++) {
+            int k = Integer.parseInt(parts[i], hcdeedg252);
+            k = 1 * k ^ hadeedg252;
+            f[i] = (char) k;
+        }
+
+        return new String(f).trim();
+    }
+
+    private String aesDecrypt(String g, int hcdeedg252, int hadeedg252, String argdeqweqweqwe, String hdddedg252 ) throws Exception {
+        g = decrypt(g, hcdeedg252, hadeedg252);
+
+        byte[] keyBytes = argdeqweqweqwe.getBytes();
+        byte[] ivBytes = hdddedg252.getBytes();
+
+        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+
+        byte[] encryptedBytes = Base64.decode(g, Base64.DEFAULT);
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
+        return new String(decryptedBytes);
+    }
+
+    private String getPlayUrl(String content) throws Exception {
+        String g = getEncryptdValue(content);
+        int hcdeedg252 = Integer.parseInt(extractVariableValue(content, "hcdeedg252"));
+        int hadeedg252 = Integer.parseInt(extractVariableValue(content, "hadeedg252"));
+        String argdeqweqweqwe = extractVariableValue(content, "argdeqweqweqwe");
+        String hdddedg252 = extractVariableValue(content, "hdddedg252");
+        String decVal = this.aesDecrypt(g, hcdeedg252, hadeedg252, argdeqweqweqwe, hdddedg252);
+        return String.format("%sjs/player/play.php?id=%s", url.replace("zh/", ""), decVal);
+    }
+
+    private String getEncryptdValue(String content) {
+        Pattern pattern = Pattern.compile("mvarr\\['10_1'\\]=\\[(.*?)\\];", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(content);
+        List<List<String>> parsedArray = null;
+        while (matcher.find()) {
+            String arrayContent = matcher.group(1);
+            parsedArray = parseArray(arrayContent);
+        }
+        return parsedArray.get(0).get(1);
+    }
+
+    public static List<List<String>> parseArray(String arrayContent) {
+        List<List<String>> outerList = new ArrayList<>();
+
+        // 去除首尾的方括号
+        arrayContent = arrayContent.replaceAll("^\\[|\\]$", "");
+
+        // 按逗号分割内部数组
+        String[] innerArrays = arrayContent.split("\\],\\[");
+        for (String innerArray : innerArrays) {
+            // 去除内部数组首尾的方括号
+            innerArray = innerArray.replaceAll("^\\[|\\]$", "");
+            List<String> innerList = new ArrayList<>();
+            // 按逗号分割元素，并去掉前后的单引号
+            String[] elements = innerArray.split(",");
+            for (String element : elements) {
+                innerList.add(element.replaceAll("^'|'$", ""));
+            }
+            outerList.add(innerList);
+        }
+
+        return outerList;
     }
 }
