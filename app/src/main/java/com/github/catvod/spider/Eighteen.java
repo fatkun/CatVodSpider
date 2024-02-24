@@ -19,12 +19,12 @@ import java.util.Map;
 
 public class Eighteen extends Spider {
 
-    private final String url = "https://mjv002.com/zh/";
+    private String url = "https://mjv002.com/zh/";
     private String cookie;
 
     private void getCookie() {
         try {
-            cookie = OkHttp.newCall("https://mjv002.com/zh/chinese_IamOverEighteenYearsOld/19/index.html").headers("set-cookie").get(0).split(";")[0];
+            cookie = OkHttp.newCall(url + "chinese_IamOverEighteenYearsOld/19/index.html").headers("set-cookie").get(0).split(";")[0];
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -38,6 +38,9 @@ public class Eighteen extends Spider {
 
     @Override
     public void init(Context context, String extend) throws Exception {
+        if(!extend.isEmpty()) {
+            this.url = extend;
+        }
         getCookie();
     }
 

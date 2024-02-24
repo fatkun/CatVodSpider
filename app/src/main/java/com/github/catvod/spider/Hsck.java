@@ -8,6 +8,7 @@ import com.github.catvod.bean.Result;
 import com.github.catvod.bean.Vod;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Notify;
 import com.github.catvod.utils.Util;
 
 import org.jsoup.Jsoup;
@@ -50,6 +51,7 @@ public class Hsck extends Spider {
                 String url = matcher.group(1);
                 String redirectUrl = String.format("%s?u=http://hsck.net&p=", url);
                 this.siteUrl = OkHttp.getLocation(redirectUrl, getHeader());
+                Notify.show(String.format("网址: %s", this.siteUrl));
                 return true;
             }
         }
