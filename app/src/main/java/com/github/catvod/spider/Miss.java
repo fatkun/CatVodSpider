@@ -18,10 +18,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Miss extends Spider {
 
-    private final String url = "https://missav.com/";
+    private final String url = "https://missav.com/cn/";
+
+    Pattern videoPattern = Pattern.compile("'eval.*(m3u8\\|.*\\|surrit\\|https)");
+
 
     @Override
     public String homeContent(boolean filter) throws Exception {
@@ -70,7 +75,8 @@ public class Miss extends Spider {
 
     @Override
     public String detailContent(List<String> ids) throws Exception {
-        Document doc = Jsoup.parse(OkHttp.string(url + ids.get(0)));
+        String content = OkHttp.string(url + ids.get(0));
+        Document doc = Jsoup.parse(content);
         String name = doc.select("meta[property=og:title]").attr("content");
         String pic = doc.select("meta[property=og:image]").attr("content");
         Vod vod = new Vod();
@@ -78,8 +84,19 @@ public class Miss extends Spider {
         vod.setVodPic(pic);
         vod.setVodName(name);
         vod.setVodPlayFrom("MissAV");
-        vod.setVodPlayUrl("播放$" + ids.get(0));
+        vod.setVodPlayUrl("播放$" + parseVideoUrl(content));
         return Result.string(vod);
+    }
+
+    private String parseVideoUrl(String content) {
+        Matcher matcher = videoPattern.matcher(content);
+        if (matcher.find()) {
+            String extractedContent = matcher.group(1);
+            String[] parts = extractedContent.split("\\|");
+            if (parts.length != 9) throw new RuntimeException("path not found");
+            return parts[8] + "://" + parts[7] + "." + parts[6] + "/" + parts[5] + "-" + parts[4] + "-" + parts[3] + "-" + parts[2] + "-" + parts[1] + "/" + "playlist.m3u8";
+        }
+        return "";
     }
 
     @Override
@@ -94,7 +111,7 @@ public class Miss extends Spider {
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
-        return Result.get().parse().url(url + id).string();
+        return Result.get().url(id).string();
     }
 
     private String searchContent(String key, String pg) {
