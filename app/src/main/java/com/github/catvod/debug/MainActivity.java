@@ -8,6 +8,7 @@ import com.github.catvod.R;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.spider.Hsck;
 import com.github.catvod.spider.Init;
+import com.github.catvod.spider.Miss;
 import com.github.catvod.spider.Yingshiche;
 import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.Logger;
@@ -47,7 +48,7 @@ public class MainActivity extends Activity {
     private void initSpider() {
         try {
             Init.init(getApplicationContext());
-            spider = new Hsck();
+            spider = new Miss();
             spider.init(this, "");
         } catch (Throwable e) {
             e.printStackTrace();
@@ -80,7 +81,7 @@ public class MainActivity extends Activity {
 
     public void detailContent() {
         try {
-            Logger.t("detailContent").d(spider.detailContent(Arrays.asList("http://hsck770.cc/vodplay/42872-1-1.html")));
+            Logger.t("detailContent").d(spider.detailContent(Arrays.asList("https://missav.com/dm33/cn/adn-511")));
         } catch (Throwable e) {
             e.printStackTrace();
         }

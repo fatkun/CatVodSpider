@@ -23,9 +23,9 @@ import java.util.regex.Pattern;
 
 public class Miss extends Spider {
 
-    private final String url = "https://missav.com/cn/";
+    private final String url = "https://missav.com/";
 
-    Pattern videoPattern = Pattern.compile("'eval.*(m3u8\\|.*\\|surrit\\|https)");
+    Pattern videoPattern = Pattern.compile("'.*(m3u8\\|.*\\|surrit\\|https).*");
 
 
     @Override
@@ -33,7 +33,7 @@ public class Miss extends Spider {
         List<Vod> list = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
-        Document doc = Jsoup.parse(OkHttp.string(url));
+        Document doc = Jsoup.parse(OkHttp.string(url + "cn/"));
         for (Element a : doc.select("a.block.px-4.py-2.text-sm.leading-5.text-nord5.bg-nord3")) {
             String typeId = a.attr("href").replace(url, "");
             if (typeId.startsWith("dm") || typeId.contains("VR")) {
